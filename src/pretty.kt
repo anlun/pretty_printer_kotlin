@@ -56,6 +56,7 @@ class Line(
         , val doc : Doc
 ) : Doc()
 
+// ----- INTERFACE START -----
 fun nil() = PrimeNil()
 fun beside(val left_doc : PrimeDoc, val right_doc : PrimeDoc) = PrimeBeside(left_doc, right_doc)
 fun nest(val nest_size : Int, val doc : PrimeDoc) = PrimeNest(nest_size, doc)
@@ -66,8 +67,12 @@ fun PrimeDoc.plus(val doc : PrimeDoc) : PrimeDoc {
     return beside(this, doc)
 }
 
-//TODO: сделать ленивым тут!
+// сделать ленивым тут!
+// Добавлена ленивость
 fun group(val doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
+
+// Еще в интерфейсе pretty
+// ----- INTERFACE END -----
 
 fun flatten(val doc : PrimeDoc) : PrimeDoc =
         when (doc) {
@@ -233,4 +238,3 @@ fun showTrees_1(val trees : List<Tree>) : PrimeDoc {
     }
     return showTree(head) + text(",") + line() + showTrees(tail)
 }
-
