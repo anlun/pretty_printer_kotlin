@@ -41,7 +41,7 @@ class PrimeText(
 ) : PrimeDoc()
 class PrimeLine() : PrimeDoc()
 class PrimeChoose(
-        val left_doc : PrimeDoc
+        val left_doc : () -> PrimeDoc //TODO: проанализировать на сколько помогло
         , val right_doc : PrimeDoc
 ) : PrimeDoc()
 
@@ -67,7 +67,7 @@ fun PrimeDoc.plus(val doc : PrimeDoc) : PrimeDoc {
 }
 
 //TODO: сделать ленивым тут!
-fun group(val doc : PrimeDoc) = PrimeChoose(flatten(doc), doc)
+fun group(val doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
 
 fun flatten(val doc : PrimeDoc) : PrimeDoc =
         when (doc) {
@@ -76,7 +76,7 @@ fun flatten(val doc : PrimeDoc) : PrimeDoc =
             is PrimeNest   -> PrimeNest(doc.nest_size, flatten(doc.doc))
             is PrimeText   -> doc //PrimeText(doc.text)
             is PrimeLine   -> PrimeText(" ")
-            is PrimeChoose -> flatten(doc.left_doc)
+            is PrimeChoose -> flatten(doc.left_doc())
 
             else -> throw IllegalArgumentException("Unknown PrimeDoc.")
         }
@@ -139,7 +139,7 @@ fun be(val width : Int, val already_occupied : Int, val doc_nest_list : List<Pai
             //TODO: и тут замутить ленивость
             //UPDATE: lambda появилась
             var left_list = ArrayList<Pair<Int, PrimeDoc>>(doc_nest_list.size)
-            left_list.add(0, Pair(nest_size, doc.left_doc))
+            left_list.add(0, Pair(nest_size, doc.left_doc()))
             left_list += doc_nest_list.tail
 
             var right_list = ArrayList<Pair<Int, PrimeDoc>>(doc_nest_list.size)
