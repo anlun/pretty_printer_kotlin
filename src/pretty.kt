@@ -4,7 +4,7 @@ import java.util.ArrayList
 
 fun main(args : Array<String>) {
     //val a = arrayListOf(1, 2, 3)
-    val tree = Tree("aaa"
+    val treeOld = Tree("aaa"
             , arrayListOf(
                 Tree("bbbbb"
                      , arrayListOf(
@@ -23,17 +23,22 @@ fun main(args : Array<String>) {
             )
     )
 
+    //val tree = generateTree(10, 5, 5, 50)
+    val tree = generateTree(5, 5, 5, 50)
+    println("Press enter...")
+    readLine()
+
     println(pretty(15, showTree(tree)))
 }
 
 abstract class PrimeDoc()
 class PrimeNil() : PrimeDoc()
 class PrimeBeside(
-        val left_doc : PrimeDoc
-        , val right_doc : PrimeDoc
+        val leftDoc: PrimeDoc
+        , val rightDoc: PrimeDoc
 ) : PrimeDoc()
 class PrimeNest (
-        val nest_size : Int
+        val nestSize: Int
         , val doc : PrimeDoc
 ) : PrimeDoc()
 class PrimeText(
@@ -41,25 +46,25 @@ class PrimeText(
 ) : PrimeDoc()
 class PrimeLine() : PrimeDoc()
 class PrimeChoose(
-        val left_doc : () -> PrimeDoc //TODO: проанализировать на сколько помогло
-        , val right_doc : PrimeDoc
+        val leftDoc: () -> PrimeDoc //TODO: проанализировать на сколько помогло
+        , val rightDoc: PrimeDoc
 ) : PrimeDoc()
 
-abstract class Doc()
-class Nil() : Doc()
+abstract class Doc(val fitSize : Int)
+class Nil() : Doc(0)
 class Text(
         val text : String
         , val doc : Doc
-) : Doc()
+) : Doc(text.size + doc.fitSize)
 class Line(
-        val nest_size : Int
+        val nestSize: Int
         , val doc : Doc
-) : Doc()
+) : Doc(0)
 
 // ----- INTERFACE START -----
 fun nil() = PrimeNil()
-fun beside(val left_doc : PrimeDoc, val right_doc : PrimeDoc) = PrimeBeside(left_doc, right_doc)
-fun nest(val nest_size : Int, val doc : PrimeDoc) = PrimeNest(nest_size, doc)
+fun beside(val leftDoc: PrimeDoc, val rightDoc: PrimeDoc) = PrimeBeside(leftDoc, rightDoc)
+fun nest(val nestSize: Int, val doc : PrimeDoc) = PrimeNest(nestSize, doc)
 fun text(val text : String) = PrimeText(text)
 fun line() = PrimeLine()
 
@@ -77,11 +82,11 @@ fun group(val doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
 fun flatten(val doc : PrimeDoc) : PrimeDoc =
         when (doc) {
             is PrimeNil    -> doc //PrimeNil()
-            is PrimeBeside -> PrimeBeside(flatten(doc.left_doc), flatten(doc.right_doc))
-            is PrimeNest   -> PrimeNest(doc.nest_size, flatten(doc.doc))
+            is PrimeBeside -> PrimeBeside(flatten(doc.leftDoc), flatten(doc.rightDoc))
+            is PrimeNest   -> PrimeNest(doc.nestSize, flatten(doc.doc))
             is PrimeText   -> doc //PrimeText(doc.text)
             is PrimeLine   -> PrimeText(" ")
-            is PrimeChoose -> flatten(doc.left_doc())
+            is PrimeChoose -> flatten(doc.leftDoc())
 
             else -> throw IllegalArgumentException("Unknown PrimeDoc.")
         }
@@ -99,61 +104,64 @@ fun layout(val doc : Doc) : String {
         is Nil  -> return ""
         is Text -> return doc.text + layout(doc.doc)
         is Line -> {
-            return "\n" + spaces(doc.nest_size) + layout(doc.doc)
+            return "\n" + spaces(doc.nestSize) + layout(doc.doc)
         }
 
         else -> throw IllegalArgumentException("Unknown Doc.")
     }
 }
 
-fun best(val width : Int, val already_occupied : Int, val doc : PrimeDoc) : Doc {
+fun best(val width : Int, val alreadyOccupied: Int, val doc : PrimeDoc) : Doc {
     var list = ArrayList<Pair<Int, PrimeDoc>>(1)
-    list.add(Pair(0, doc) )
-    return be(width, already_occupied, list)
+    list.add(Pair(0, doc))
+    return be(width, alreadyOccupied, list)
 }
 
-fun be(val width : Int, val already_occupied : Int, val doc_nest_list : List<Pair<Int, PrimeDoc>>) : Doc {
-    if (doc_nest_list.empty) {
+var beCounter = 0
+fun be(val width : Int, val alreadyOccupied: Int, val docNestList: List<Pair<Int, PrimeDoc>>) : Doc {
+    if (docNestList.empty) {
         return Nil()
     }
 
-    val head      = doc_nest_list.head
-    val nest_size = head!!.first
+    //println(beCounter++)
+
+    val head      = docNestList.head
+    val nestSize = head!!.first
     val doc       = head.second
 
     when (doc) {
-        is PrimeNil    -> return be(width, already_occupied, doc_nest_list.tail)
+        is PrimeNil    -> return be(width, alreadyOccupied, docNestList.tail)
         is PrimeBeside -> {
-            var list = ArrayList<Pair<Int, PrimeDoc>>(doc_nest_list.size + 1)
-            list.add(Pair(nest_size, doc.left_doc))
-            list.add(Pair(nest_size, doc.right_doc))
-            list += doc_nest_list.tail
-            return be(width, already_occupied, list)
+            var list = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size + 1)
+            list.add(Pair(nestSize, doc.leftDoc))
+            list.add(Pair(nestSize, doc.rightDoc))
+            list += docNestList.tail
+            return be(width, alreadyOccupied, list)
         }
 
         is PrimeNest -> {
-            var list  = ArrayList<Pair<Int, PrimeDoc>>(doc_nest_list.size)
-            list.add(0, Pair(doc.nest_size + nest_size, doc.doc))
-            list += doc_nest_list.tail
-            return be(width, already_occupied, list)
+            var list  = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size)
+            list.add(0, Pair(doc.nestSize + nestSize, doc.doc))
+            list += docNestList.tail
+            return be(width, alreadyOccupied, list)
         }
-        is PrimeText -> return Text(doc.text, be(width, already_occupied + doc.text.length(), doc_nest_list.tail))
-        is PrimeLine -> return Line(nest_size, be(width, nest_size, doc_nest_list.tail))
+        is PrimeText -> return Text(doc.text, be(width, alreadyOccupied + doc.text.length(), docNestList.tail))
+        is PrimeLine -> return Line(nestSize, be(width, nestSize, docNestList.tail))
 
         is PrimeChoose -> {
-            //TODO: и тут замутить ленивость
+            //и тут замутить ленивость
             //UPDATE: lambda появилась
-            var left_list = ArrayList<Pair<Int, PrimeDoc>>(doc_nest_list.size)
-            left_list.add(0, Pair(nest_size, doc.left_doc()))
-            left_list += doc_nest_list.tail
+            var leftList = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size)
+            leftList.add(0, Pair(nestSize, doc.leftDoc()))
+            leftList += docNestList.tail
 
-            var right_list = ArrayList<Pair<Int, PrimeDoc>>(doc_nest_list.size)
-            right_list.add(0, Pair(nest_size, doc.right_doc))
-            right_list += doc_nest_list.tail
+            var rightList = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size)
+            rightList.add(0, Pair(nestSize, doc.rightDoc))
+            rightList += docNestList.tail
 
-            return better(width, already_occupied
-                    , be(width, already_occupied, left_list)
-                    , { be(width, already_occupied, right_list) }
+            return better(width, alreadyOccupied
+                    , { be(width, alreadyOccupied, leftList)  }
+                    , { be(width, alreadyOccupied, rightList) }
                     )
         }
 
@@ -161,80 +169,35 @@ fun be(val width : Int, val already_occupied : Int, val doc_nest_list : List<Pai
     }
 }
 
-fun better(val width : Int, val already_occupied : Int, val left_doc : Doc, right_doc : () -> Doc) : Doc =
-    if (fits(width - already_occupied, left_doc)) {
-        left_doc
+fun better(val width : Int, val alreadyOccupied: Int, val leftDoc: () -> Doc, rightDoc: () -> Doc) : Doc =
+    if (fits(width - alreadyOccupied, leftDoc)) {
+//    if (true) {
+//        val left_1 = rightDoc()
+        // TODO: убрать, что leftDoc считается 2 раза - здесь и в fits. Но на производительность влияет не очень сильно
+        leftDoc()
     } else {
-        right_doc()
+        rightDoc()
     }
 
-fun fits(val place_size : Int, val doc : Doc) : Boolean {
-    if (place_size < 0) return false
+fun fits(val placeSize: Int, val docFunc: () -> Doc) : Boolean {
+    if (placeSize < 0) return false
 
+    val doc = docFunc()
+
+    return placeSize > doc.fitSize
+    /*
     when (doc) {
         is Nil  -> return true
-        is Text -> return fits(place_size - doc.text.size, doc.doc)
+        is Text -> return fits(placeSize - doc.text.size, { doc.doc })
         is Line -> return true
 
         else -> throw IllegalArgumentException("Unknown Doc.")
     }
+    */
 }
 
 fun pretty(val width : Int, doc : PrimeDoc) : String = layout(best(width, 0, doc))
 
 // Utility
-fun bracket(val open_bracket : String, val doc : PrimeDoc, val close_bracket : String) : PrimeDoc =
-        group(text(open_bracket) + nest(2, line() + doc) + line() + text(close_bracket))
-
-// Tree example
-class Tree(val text : String, val children : ArrayList<Tree>)
-
-fun showTree(val tree : Tree) : PrimeDoc = group(text(tree.text) + nest(tree.text.size, showBracket(tree.children)))
-
-fun showBracket(val trees : List<Tree>) : PrimeDoc {
-    if (trees.empty) {
-        return nil()
-    }
-
-    return  text("[") + nest(1, showTrees(trees)) + text("]")
-}
-
-fun showTrees(val trees : List<Tree>) : PrimeDoc {
-    val head = trees.head
-
-    if (head == null) {
-        return nil()
-    }
-
-    if (trees.tail.empty) {
-        return showTree(head)
-    }
-
-    return showTree(head) + text(",") + line() + showTrees(trees.tail)
-}
-
-fun showTree_1(val tree : Tree) : PrimeDoc {
-    return text(tree.text) + showBracket_1(tree.children)
-}
-
-fun showBracket_1(val trees : List<Tree>) : PrimeDoc {
-    if (trees.empty) {
-        return nil()
-    }
-
-    return bracket("[", showTrees_1(trees), "]")
-}
-
-fun showTrees_1(val trees : List<Tree>) : PrimeDoc {
-    val head = trees.head
-    val tail = trees.tail
-
-    if (head == null) {
-        return nil()
-    }
-
-    if (tail.size == 0) {
-        return showTree(head)
-    }
-    return showTree(head) + text(",") + line() + showTrees(tail)
-}
+fun bracket(val openBracket: String, val doc : PrimeDoc, val closeBracket: String) : PrimeDoc =
+        group(text(openBracket) + nest(2, line() + doc) + line() + text(closeBracket))
