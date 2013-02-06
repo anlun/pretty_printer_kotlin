@@ -26,7 +26,7 @@ fun main(args : Array<String>) {
     )
     println(pretty(15, showTree(treeOld)))
 
-    val tree = generateTree(7, 5, 5, 100)
+    val tree = generateTree(8, 5, 5, 100)
     //val tree = generateTree(5, 5, 5, 100)
     println("Press enter...")
     readLine()
@@ -141,12 +141,6 @@ fun layout(val doc : Doc) : String {
 }
 
 fun best(val width : Int, val alreadyOccupied : Int, val doc : PrimeDoc) : Doc {
-    /*
-    var list = ArrayList<Pair<Int, PrimeDoc>>(1)
-    list.add(Pair(0, doc))
-    return be(width, alreadyOccupied, list)
-    */
-
     return be_nonRecursive(width, alreadyOccupied, doc)
 }
 
@@ -189,40 +183,9 @@ fun moveNil(var docToMoveNil : Doc, val docToNilPlace : Doc) : Doc {
             else -> throw IllegalArgumentException("Incorrect Doc tree.")
         }
     }
-    /*
-    val docToMoveNil_val = docToMoveNil
-    when (docToMoveNil_val) {
-        is Nil  -> return docToNilPlace
-        is Text -> return Text(docToMoveNil_val.text    , moveNil(docToMoveNil_val.doc, docToNilPlace))
-        is Line -> return Line(docToMoveNil_val.nestSize, moveNil(docToMoveNil_val.doc, docToNilPlace))
-
-        else -> throw IllegalArgumentException("Unknown Doc type.")
-    }
-    */
 }
 
 fun docFromStack(var stack : ArrayList<StackDoc>) : Doc {
-    /*
-    if (stack.empty) {
-        return Nil()
-    }
-
-    val head = stack.head
-    stack.remove(0)
-
-    when (head) {
-        is StackNil  -> return docFromStack(stack)//return Nil()
-        is StackText -> return Text(head.text    , docFromStack(stack))
-        is StackLine -> return Line(head.nestSize, docFromStack(stack))
-
-        is StackDocDoc -> {
-            return moveNil(head.doc, docFromStack(stack))
-        }
-
-        else -> throw IllegalArgumentException("Unknown stack element")
-    }
-    */
-
     var curResult : Doc = Nil()
     for (i in stack.indices) {
         val curPos = stack.size - i - 1
@@ -242,14 +205,11 @@ fun docFromStack(var stack : ArrayList<StackDoc>) : Doc {
     return curResult
 }
 
-var beCounter_nonRec = 0
 fun be_nonRecursive(val width : Int, val startAlreadyOccupied : Int, val doc : PrimeDoc) : Doc {
     var list = ArrayList<Pair<Int, PrimeDoc>>()
     list.add(Pair(0, doc))
     var resultStack = ArrayList<StackDoc>()
     var alreadyOccupied = startAlreadyOccupied
-
-    val beCounter = beCounter_nonRec++
 
     while (true) {
         if (list.empty) {
@@ -296,75 +256,6 @@ fun be_nonRecursive(val width : Int, val startAlreadyOccupied : Int, val doc : P
     }
 }
 
-var beCounter = 0
-fun be(val width : Int, val alreadyOccupied: Int, val docNestList: List<Pair<Int, PrimeDoc>>) : Doc {
-    if (docNestList.empty) {
-        beCounter--
-        return Nil()
-    }
-
-    print(docNestList.size)
-    print(" ")
-    println(beCounter++)
-
-    val head     = docNestList.head
-    val nestSize = head!!.first
-    val doc      = head.second
-
-    when (doc) {
-        is PrimeNil    -> return be(width, alreadyOccupied, docNestList.tail)
-        is PrimeBeside -> {
-            var list = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size + 1)
-            list.add(Pair(nestSize, doc.leftDoc))
-            list.add(Pair(nestSize, doc.rightDoc))
-            list += docNestList.tail
-            return be(width, alreadyOccupied, list)
-        }
-
-        is PrimeNest -> {
-            var list  = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size)
-            list.add(0, Pair(doc.nestSize + nestSize, doc.doc))
-            list += docNestList.tail
-            return be(width, alreadyOccupied, list)
-        }
-        is PrimeText -> return Text(doc.text, be(width, alreadyOccupied + doc.text.length(), docNestList.tail))
-        is PrimeLine -> return Line(nestSize, be(width, nestSize, docNestList.tail))
-
-        is PrimeChoose -> {
-            //и тут замутить ленивость
-            //UPDATE: lambda появилась
-            var leftList = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size)
-            leftList.add(0, Pair(nestSize, doc.leftDoc()))
-            leftList += docNestList.tail
-
-            var rightList = ArrayList<Pair<Int, PrimeDoc>>(docNestList.size)
-            rightList.add(0, Pair(nestSize, doc.rightDoc))
-            rightList += docNestList.tail
-
-            return better(width, alreadyOccupied
-                    , { be(width, alreadyOccupied, leftList)  }
-                    , { be(width, alreadyOccupied, rightList) }
-                    )
-        }
-
-        else -> throw IllegalArgumentException("Unknown PrimeDoc.")
-    }
-}
-
-fun better(val width : Int, val alreadyOccupied: Int, val leftDoc: () -> Doc, rightDoc: () -> Doc) : Doc {
-    // TODO: убрать
-    return leftDoc()
-    /*
-    val fitResult = fits(width - alreadyOccupied, leftDoc)
-
-    if (fitResult != null) {
-        return fitResult
-    } else {
-        return rightDoc()
-    }
-    */
-}
-
 fun fits(val placeSize: Int, val docFunc: () -> Doc) : Doc? {
     if (placeSize < 0) return null
 
@@ -375,16 +266,6 @@ fun fits(val placeSize: Int, val docFunc: () -> Doc) : Doc? {
     } else {
         null
     }
-    //return placeSize > doc.fitSize ? doc : null
-    /*
-    when (doc) {
-        is Nil  -> return true
-        is Text -> return fits(placeSize - doc.text.size, { doc.doc })
-        is Line -> return true
-
-        else -> throw IllegalArgumentException("Unknown Doc.")
-    }
-    */
 }
 
 fun pretty(val width : Int, doc : PrimeDoc) : String = layout(best(width, 0, doc))
