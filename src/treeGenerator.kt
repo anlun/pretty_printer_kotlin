@@ -5,14 +5,14 @@ import java.util.Random
 
 class Tree(val text : String, val children : ArrayList<Tree>)
 
-fun showTree(val tree : Tree) : PrimeDoc = group(text(tree.text) + nest(tree.text.size, showBracket(tree.children)))
+fun showTree(val tree : Tree) : PrimeDoc = group(text(tree.text) + nest(tree.text.length, showBracket(tree.children)))
 
 fun showBracket(val trees : List<Tree>) : PrimeDoc {
     if (trees.empty) {
         return nil()
     }
 
-    return  text("[") + nest(1, showTrees(trees)) + text("]")
+    return  text("[") + nest("[".length, showTrees(trees)) + text("]")
 }
 
 fun showTrees(val trees : List<Tree>) : PrimeDoc {
@@ -64,6 +64,7 @@ fun generateTree(
 ) : Tree {
     // TODO: generate label
     val label = "aaa"
+    //val label = "aaa12312141515251235235235"
 
     if (treeDepth <= 1) {
         return Tree("aaa", ArrayList<Tree>())

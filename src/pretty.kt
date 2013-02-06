@@ -4,7 +4,11 @@ import java.util.ArrayList
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import java.util.LinkedList
 
+// TODO: разобраться, что за проблема с nest
 fun main(args : Array<String>) {
+    val doc = text("aaa") + nest(2, line() + text("bb") + nest(1, line() + text("cc")))
+    println(pretty(15, doc))
+
     //val a = arrayListOf(1, 2, 3)
     val treeOld = Tree("aaa"
             , arrayListOf(
@@ -26,13 +30,15 @@ fun main(args : Array<String>) {
     )
     println(pretty(15, showTree(treeOld)))
 
+    /*
     val tree = generateTree(8, 5, 5, 100)
     //val tree = generateTree(5, 5, 5, 100)
     println("Press enter...")
     readLine()
 
-    println(pretty(50, showTree(tree)))
+    //println(pretty(50, showTree(tree)))
     //be_nonRecursive(15, 0, showTree(tree))
+    */
 }
 
 abstract class PrimeDoc()
@@ -59,7 +65,7 @@ class Nil() : Doc(0)
 class Text(
         val text : String
         , var doc : Doc
-) : Doc(text.size + doc.fitSize)
+) : Doc(text.length + doc.fitSize)
 class Line(
         val nestSize: Int
         , var doc : Doc
