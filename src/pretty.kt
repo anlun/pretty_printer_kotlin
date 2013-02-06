@@ -3,8 +3,8 @@ package pretty
 import java.util.ArrayList
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import java.util.LinkedList
+import java.util.Stack
 
-// TODO: разобраться, что за проблема с nest
 fun main(args : Array<String>) {
     val doc = text("aaa") + nest(2, line() + text("bb") + nest(1, line() + text("cc")))
     println(pretty(15, doc))
@@ -30,15 +30,18 @@ fun main(args : Array<String>) {
     )
     println(pretty(15, showTree(treeOld)))
 
-    /*
     val tree = generateTree(8, 5, 5, 100)
     //val tree = generateTree(5, 5, 5, 100)
     println("Press enter...")
     readLine()
 
-    //println(pretty(50, showTree(tree)))
+    val startTime = System.nanoTime()
+    println(pretty(50, showTree(tree)))
+    val endTime   = System.nanoTime()
+    val duration = (endTime - startTime) / Math.pow(10.0, 9.0)
+
+    println("Duration: " + duration)
     //be_nonRecursive(15, 0, showTree(tree))
-    */
 }
 
 abstract class PrimeDoc()
@@ -193,8 +196,7 @@ fun moveNil(var docToMoveNil : Doc, val docToNilPlace : Doc) : Doc {
 
 fun docFromStack(var stack : ArrayList<StackDoc>) : Doc {
     var curResult : Doc = Nil()
-    for (i in stack.indices) {
-        val curPos = stack.size - i - 1
+    for (curPos in stack.indices) {
         val curElem = stack[curPos]
 
         when (curElem) {
@@ -211,54 +213,52 @@ fun docFromStack(var stack : ArrayList<StackDoc>) : Doc {
     return curResult
 }
 
-fun be_nonRecursive(val width : Int, val startAlreadyOccupied : Int, val doc : PrimeDoc) : Doc {
-    var list = ArrayList<Pair<Int, PrimeDoc>>()
-    list.add(Pair(0, doc))
+fun be_nonRecursive(val width : Int, val startAlreadyOccupied : Int, val doc : PrimeDoc, val nestSize : Int = 0) : Doc {
+    var workStack = Stack<Pair<Int, PrimeDoc>>()
+    workStack.push(Pair(nestSize, doc))
     var resultStack = ArrayList<StackDoc>()
     var alreadyOccupied = startAlreadyOccupied
 
     while (true) {
-        if (list.empty) {
+        if (workStack.empty) {
             return docFromStack(resultStack)
         }
 
-        val head = list.head
-        list.remove(0) // list = list.tail
+        val head = workStack.pop()
 
         val nestSize = head!!.first
         val doc      = head.second
 
         when (doc) {
-            is PrimeNil    -> resultStack.add(0, StackNil())
+            is PrimeNil    -> resultStack.add(StackNil())
             is PrimeBeside -> {
-                list.add(0, Pair(nestSize, doc.leftDoc)) // TODO: надо в начало добавлять!!!
-                list.add(0, Pair(nestSize, doc.rightDoc))
+                workStack.push(Pair(nestSize, doc.leftDoc))
+                workStack.push(Pair(nestSize, doc.rightDoc))
             }
             is PrimeNest   -> {
-                list.add(0, Pair(doc.nestSize + nestSize, doc.doc))
+                workStack.push(Pair(doc.nestSize + nestSize, doc.doc))
             }
             is PrimeText   -> {
-                resultStack.add(0, StackText(doc.text))
+                resultStack.add(StackText(doc.text))
                 alreadyOccupied += doc.text.length()
             }
             is PrimeLine   -> {
-                resultStack.add(0, StackLine(nestSize))
+                resultStack.add(StackLine(nestSize))
                 alreadyOccupied = nestSize
             }
 
             is PrimeChoose -> {
-                val leftDoc = be_nonRecursive(width, alreadyOccupied, doc.leftDoc())
+                val leftDoc = be_nonRecursive(width, alreadyOccupied, doc.leftDoc(), nestSize)
                 if (fits(width - alreadyOccupied, { leftDoc }) != null) {
-                    resultStack.add(0, StackDocDoc(leftDoc))
+                    resultStack.add(StackDocDoc(leftDoc))
                 } else {
-                    val rightDoc = be_nonRecursive(width, alreadyOccupied, doc.rightDoc)
-                    resultStack.add(0, StackDocDoc(rightDoc))
+                    val rightDoc = be_nonRecursive(width, alreadyOccupied, doc.rightDoc, nestSize)
+                    resultStack.add(StackDocDoc(rightDoc))
                 }
             }
 
             else -> throw IllegalArgumentException("Unknown PrimeDoc.")
         }
-
     }
 }
 
