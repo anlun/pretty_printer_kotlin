@@ -73,7 +73,8 @@ fun generateTree(
     val randomGenerator = Random()
     for (i in 1..childMaxCount) {
         val rand = randomGenerator.nextInt(maxChildAppearProbability + 1)
-        if (rand < childAppearProbability) {
+        if (true) {
+        //if (rand < childAppearProbability) {
             children.add(generateTree(treeDepth - 1, childMaxCount, maxLabelSize, childAppearProbability))
         }
     }

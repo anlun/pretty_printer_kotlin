@@ -2,6 +2,7 @@ package pretty
 
 import java.util.ArrayList
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
+import java.util.LinkedList
 
 fun main(args : Array<String>) {
     //val a = arrayListOf(1, 2, 3)
@@ -23,14 +24,14 @@ fun main(args : Array<String>) {
                     )
             )
     )
-    //println(pretty(15, showTree(treeOld)))
+    println(pretty(15, showTree(treeOld)))
 
     val tree = generateTree(7, 5, 5, 100)
     //val tree = generateTree(5, 5, 5, 100)
     println("Press enter...")
     readLine()
 
-    println(pretty(15, showTree(tree)))
+    println(pretty(50, showTree(tree)))
     //be_nonRecursive(15, 0, showTree(tree))
 }
 
@@ -57,11 +58,11 @@ abstract class Doc(val fitSize : Int)
 class Nil() : Doc(0)
 class Text(
         val text : String
-        , val doc : Doc
+        , var doc : Doc
 ) : Doc(text.size + doc.fitSize)
 class Line(
         val nestSize: Int
-        , val doc : Doc
+        , var doc : Doc
 ) : Doc(0)
 
 // ----- INTERFACE START -----
@@ -156,14 +157,48 @@ class StackText(val text  : String) : StackDoc()
 
 class StackDocDoc(val doc : Doc) : StackDoc()
 
-fun moveNil(docToMoveNil : Doc, docToNilPlace : Doc) : Doc {
-    when (docToMoveNil) {
+fun moveNil(var docToMoveNil : Doc, val docToNilPlace : Doc) : Doc {
+    if (docToMoveNil is Nil) {
+        return docToNilPlace
+    }
+
+    var curSubtreeDoc = docToMoveNil
+    while (true) {
+        val curSubtreeDoc_val = curSubtreeDoc
+        when (curSubtreeDoc_val) {
+            is Text -> {
+                if (curSubtreeDoc_val.doc is Nil) {
+                    var curSubtreeDoc_var = curSubtreeDoc_val
+                    curSubtreeDoc_val.doc = docToNilPlace
+                    return docToMoveNil
+                }
+
+                curSubtreeDoc = curSubtreeDoc_val.doc
+            }
+
+            is Line -> {
+                if (curSubtreeDoc_val.doc is Nil) {
+                    var curSubtreeDoc_var = curSubtreeDoc_val
+                    curSubtreeDoc_val.doc = docToNilPlace
+                    return docToMoveNil
+                }
+
+                curSubtreeDoc = curSubtreeDoc_val.doc
+            }
+
+            else -> throw IllegalArgumentException("Incorrect Doc tree.")
+        }
+    }
+    /*
+    val docToMoveNil_val = docToMoveNil
+    when (docToMoveNil_val) {
         is Nil  -> return docToNilPlace
-        is Text -> return Text(docToMoveNil.text    , moveNil(docToMoveNil.doc, docToNilPlace))
-        is Line -> return Line(docToMoveNil.nestSize, moveNil(docToMoveNil.doc, docToNilPlace))
+        is Text -> return Text(docToMoveNil_val.text    , moveNil(docToMoveNil_val.doc, docToNilPlace))
+        is Line -> return Line(docToMoveNil_val.nestSize, moveNil(docToMoveNil_val.doc, docToNilPlace))
 
         else -> throw IllegalArgumentException("Unknown Doc type.")
     }
+    */
 }
 
 fun docFromStack(var stack : ArrayList<StackDoc>) : Doc {
