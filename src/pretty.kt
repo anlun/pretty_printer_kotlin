@@ -1,7 +1,6 @@
 package pretty
 
 import java.util.ArrayList
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
 import java.util.LinkedList
 import java.util.Stack
 
@@ -30,7 +29,7 @@ fun main(args : Array<String>) {
     )
     println(pretty(15, showTree(treeOld)))
 
-    val tree = generateTree(8, 5, 5, 100)
+    val tree = generateTree(9, 5, 5, 100)
     //val tree = generateTree(5, 5, 5, 100)
     println("Press enter...")
     readLine()
@@ -76,23 +75,23 @@ class Line(
 
 // ----- INTERFACE START -----
 fun nil() = PrimeNil()
-fun beside(val leftDoc: PrimeDoc, val rightDoc: PrimeDoc) = PrimeBeside(leftDoc, rightDoc)
-fun nest(val nestSize: Int, val doc : PrimeDoc) = PrimeNest(nestSize, doc)
-fun text(val text : String) = PrimeText(text)
+fun beside(leftDoc: PrimeDoc, rightDoc: PrimeDoc) = PrimeBeside(leftDoc, rightDoc)
+fun nest(nestSize: Int, doc : PrimeDoc) = PrimeNest(nestSize, doc)
+fun text(text : String) = PrimeText(text)
 fun line() = PrimeLine()
 
-fun PrimeDoc.plus(val doc : PrimeDoc) : PrimeDoc {
+fun PrimeDoc.plus(doc : PrimeDoc) : PrimeDoc {
     return beside(this, doc)
 }
 
 // сделать ленивым тут!
 // Добавлена ленивость
-fun group(val doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
+fun group(doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
 
 // Еще в интерфейсе pretty
 // ----- INTERFACE END -----
 
-fun flatten(val doc : PrimeDoc) : PrimeDoc =
+fun flatten(doc : PrimeDoc) : PrimeDoc =
         when (doc) {
             is PrimeNil    -> doc //PrimeNil()
             is PrimeBeside -> PrimeBeside(flatten(doc.leftDoc), flatten(doc.rightDoc))
@@ -112,7 +111,7 @@ fun spaces(count : Int) : String {
     return builder.toString()
 }
 
-fun layout_rec(val doc : Doc) : String {
+fun layout_rec(doc : Doc) : String {
     when (doc) {
         is Nil  -> return ""
         is Text -> return doc.text + layout(doc.doc)
@@ -124,10 +123,10 @@ fun layout_rec(val doc : Doc) : String {
     }
 }
 
-fun layout(val doc : Doc) : String {
-    var resultBuilder = StringBuilder()
-
+fun layout(doc : Doc) : String {
+    val resultBuilder = StringBuilder()
     var curDoc : Doc = doc
+
     while (true) {
         val workingDoc = curDoc
 
@@ -149,10 +148,6 @@ fun layout(val doc : Doc) : String {
     return resultBuilder.toString()
 }
 
-fun best(val width : Int, val alreadyOccupied : Int, val doc : PrimeDoc) : Doc {
-    return be_nonRecursive(width, alreadyOccupied, doc)
-}
-
 abstract class StackDoc()
 class StackNil  : StackDoc()
 class StackLine(val nestSize : Int) : StackDoc()
@@ -160,7 +155,7 @@ class StackText(val text  : String) : StackDoc()
 
 class StackDocDoc(val doc : Doc) : StackDoc()
 
-fun moveNil(var docToMoveNil : Doc, val docToNilPlace : Doc) : Doc {
+fun moveNil(docToMoveNil : Doc, docToNilPlace : Doc) : Doc {
     if (docToMoveNil is Nil) {
         return docToNilPlace
     }
@@ -194,7 +189,7 @@ fun moveNil(var docToMoveNil : Doc, val docToNilPlace : Doc) : Doc {
     }
 }
 
-fun docFromStack(var stack : ArrayList<StackDoc>) : Doc {
+fun docFromStack(stack : ArrayList<StackDoc>) : Doc {
     var curResult : Doc = Nil()
     for (curPos in stack.indices) {
         val curElem = stack[curPos]
@@ -213,7 +208,7 @@ fun docFromStack(var stack : ArrayList<StackDoc>) : Doc {
     return curResult
 }
 
-fun be_nonRecursive(val width : Int, val startAlreadyOccupied : Int, val doc : PrimeDoc, val nestSize : Int = 0) : Doc {
+fun best(width : Int, startAlreadyOccupied : Int, doc : PrimeDoc, nestSize : Int = 0) : Doc {
     var workStack = Stack<Pair<Int, PrimeDoc>>()
     workStack.push(Pair(nestSize, doc))
     var resultStack = ArrayList<StackDoc>()
@@ -248,11 +243,11 @@ fun be_nonRecursive(val width : Int, val startAlreadyOccupied : Int, val doc : P
             }
 
             is PrimeChoose -> {
-                val leftDoc = be_nonRecursive(width, alreadyOccupied, doc.leftDoc(), nestSize)
+                val leftDoc = best(width, alreadyOccupied, doc.leftDoc(), nestSize)
                 if (fits(width - alreadyOccupied, { leftDoc }) != null) {
                     resultStack.add(StackDocDoc(leftDoc))
                 } else {
-                    val rightDoc = be_nonRecursive(width, alreadyOccupied, doc.rightDoc, nestSize)
+                    val rightDoc = best(width, alreadyOccupied, doc.rightDoc, nestSize)
                     resultStack.add(StackDocDoc(rightDoc))
                 }
             }
@@ -262,7 +257,7 @@ fun be_nonRecursive(val width : Int, val startAlreadyOccupied : Int, val doc : P
     }
 }
 
-fun fits(val placeSize: Int, val docFunc: () -> Doc) : Doc? {
+fun fits(placeSize: Int, docFunc: () -> Doc) : Doc? {
     if (placeSize < 0) return null
 
     val doc = docFunc()
@@ -274,8 +269,8 @@ fun fits(val placeSize: Int, val docFunc: () -> Doc) : Doc? {
     }
 }
 
-fun pretty(val width : Int, doc : PrimeDoc) : String = layout(best(width, 0, doc))
+fun pretty(width : Int, doc : PrimeDoc) : String = layout(best(width, 0, doc))
 
 // Utility
-fun bracket(val openBracket: String, val doc : PrimeDoc, val closeBracket: String) : PrimeDoc =
+fun bracket(openBracket: String, doc : PrimeDoc, closeBracket: String) : PrimeDoc =
         group(text(openBracket) + nest(2, line() + doc) + line() + text(closeBracket))

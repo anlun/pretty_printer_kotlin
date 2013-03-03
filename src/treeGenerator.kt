@@ -5,9 +5,9 @@ import java.util.Random
 
 class Tree(val text : String, val children : ArrayList<Tree>)
 
-fun showTree(val tree : Tree) : PrimeDoc = group(text(tree.text) + nest(tree.text.length, showBracket(tree.children)))
+fun showTree(tree : Tree) : PrimeDoc = group(text(tree.text) + nest(tree.text.length, showBracket(tree.children)))
 
-fun showBracket(val trees : List<Tree>) : PrimeDoc {
+fun showBracket(trees : List<Tree>) : PrimeDoc {
     if (trees.empty) {
         return nil()
     }
@@ -15,7 +15,7 @@ fun showBracket(val trees : List<Tree>) : PrimeDoc {
     return  text("[") + nest("[".length, showTrees(trees)) + text("]")
 }
 
-fun showTrees(val trees : List<Tree>) : PrimeDoc {
+fun showTrees(trees : List<Tree>) : PrimeDoc {
     val head = trees.head
 
     if (head == null) {
@@ -29,11 +29,11 @@ fun showTrees(val trees : List<Tree>) : PrimeDoc {
     return showTree(head) + text(",") + line() + showTrees(trees.tail)
 }
 
-fun showTree_1(val tree : Tree) : PrimeDoc {
+fun showTree_1(tree : Tree) : PrimeDoc {
     return text(tree.text) + showBracket_1(tree.children)
 }
 
-fun showBracket_1(val trees : List<Tree>) : PrimeDoc {
+fun showBracket_1(trees : List<Tree>) : PrimeDoc {
     if (trees.empty) {
         return nil()
     }
@@ -41,7 +41,7 @@ fun showBracket_1(val trees : List<Tree>) : PrimeDoc {
     return bracket("[", showTrees_1(trees), "]")
 }
 
-fun showTrees_1(val trees : List<Tree>) : PrimeDoc {
+fun showTrees_1(trees : List<Tree>) : PrimeDoc {
     val head = trees.head
     val tail = trees.tail
 
@@ -57,10 +57,10 @@ fun showTrees_1(val trees : List<Tree>) : PrimeDoc {
 
 val maxChildAppearProbability = 100
 fun generateTree(
-        val treeDepth : Int
-        , val childMaxCount : Int
-        , val maxLabelSize : Int
-        , val childAppearProbability : Int // Between 0 and 100 inclusive
+        treeDepth : Int
+        , childMaxCount : Int
+        , maxLabelSize : Int
+        , childAppearProbability : Int // Between 0 and 100 inclusive
 ) : Tree {
     // TODO: generate label
     val label = "aaa"
