@@ -4,7 +4,7 @@ import java.util.ArrayList
 import java.util.LinkedList
 import java.util.Stack
 
-fun main(args : Array<String>) {
+fun main(args: Array<String>) {
     val doc = text("aaa") + nest(2, line() + text("bb") + nest(1, line() + text("cc")))
     println(pretty(15, doc))
 
@@ -46,55 +46,65 @@ fun main(args : Array<String>) {
 
 fun nil() = PrimeNil()
 fun beside(leftDoc: PrimeDoc, rightDoc: PrimeDoc) = PrimeBeside(leftDoc, rightDoc)
-fun nest(nestSize: Int, doc : PrimeDoc) = PrimeNest(nestSize, doc)
-fun text(text : String) = PrimeText(text)
+fun nest(nestSize: Int, doc: PrimeDoc) = PrimeNest(nestSize, doc)
+fun text(text: String) = PrimeText(text)
 fun line() = PrimeLine()
 
-fun PrimeDoc.plus(doc : PrimeDoc) : PrimeDoc {
+fun group(doc: PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
+
+fun pretty(width: Int, doc: PrimeDoc): String = layout(best(width, 0, doc))
+
+// Utility
+fun PrimeDoc.plus(doc: PrimeDoc): PrimeDoc {
     return beside(this, doc)
 }
 
-fun group(doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
+fun PrimeDoc.div(doc: PrimeDoc): PrimeDoc {
+    return this + line() + doc
+}
 
-fun pretty(width : Int, doc : PrimeDoc) : String = layout(best(width, 0, doc))
+fun PrimeDoc.times(doc: PrimeDoc): PrimeDoc {
+    return this + text(" ") + doc
+}
 
-// Utility
-fun bracket(openBracket: String, doc : PrimeDoc, closeBracket: String) : PrimeDoc =
-        group(text(openBracket) + nest(2, line() + doc) + line() + text(closeBracket))
+fun bracket(openBracket: String, doc: PrimeDoc, closeBracket: String, nestSize: Int = 2): PrimeDoc =
+        group(text(openBracket) + nest(nestSize, line() + doc) + line() + text(closeBracket))
+
+//fun spread(docList : List<PrimeDoc>) : PrimeDoc =
 
 // ----- INTERFACE END -----
 
 abstract class PrimeDoc()
 class PrimeNil() : PrimeDoc()
 class PrimeBeside(
-        val leftDoc: PrimeDoc
+          val leftDoc: PrimeDoc
         , val rightDoc: PrimeDoc
 ) : PrimeDoc()
 class PrimeNest (
-        val nestSize: Int
-        , val doc : PrimeDoc
+          val nestSize: Int
+        , val doc: PrimeDoc
 ) : PrimeDoc()
 class PrimeText(
-        val text : String
+        val text: String
 ) : PrimeDoc()
 class PrimeLine() : PrimeDoc()
 class PrimeChoose(
-        val leftDoc: () -> PrimeDoc //TODO: проанализировать на сколько помогло
+          val leftDoc:  () -> PrimeDoc //TODO: проанализировать на сколько помогло
         , val rightDoc: PrimeDoc
 ) : PrimeDoc()
 
-abstract class Doc(val fitSize : Int)
+abstract class Doc(val fitSize: Int)
 class Nil() : Doc(0)
 class Text(
-        val text : String
-        , var doc : Doc
+          val text: String
+        , var doc:  Doc
 ) : Doc(text.length + doc.fitSize)
 class Line(
-        val nestSize: Int
-        , var doc : Doc
+          val nestSize: Int
+        , var doc:      Doc
 ) : Doc(0)
 
-fun flatten(doc : PrimeDoc) : PrimeDoc =
+fun flatten(doc: PrimeDoc): PrimeDoc =
         when (doc) {
             is PrimeNil    -> doc //PrimeNil()
             is PrimeBeside -> PrimeBeside(flatten(doc.leftDoc), flatten(doc.rightDoc))
@@ -106,7 +116,7 @@ fun flatten(doc : PrimeDoc) : PrimeDoc =
             else -> throw IllegalArgumentException("Unknown PrimeDoc.")
         }
 
-fun spaces(count : Int) : String {
+fun spaces(count: Int): String {
     val builder = StringBuilder()
     for (i in 1..count) {
         builder.append(" ")
@@ -114,9 +124,9 @@ fun spaces(count : Int) : String {
     return builder.toString()
 }
 
-fun layout(doc : Doc) : String {
+fun layout(doc: Doc): String {
     val resultBuilder = StringBuilder()
-    var curDoc : Doc = doc
+    var curDoc: Doc   = doc
 
     while (true) {
         val workingDoc = curDoc
@@ -140,13 +150,13 @@ fun layout(doc : Doc) : String {
 }
 
 abstract class StackDoc()
-class StackNil  : StackDoc()
-class StackLine(val nestSize : Int) : StackDoc()
-class StackText(val text  : String) : StackDoc()
+class StackNil : StackDoc()
+class StackLine(val nestSize: Int   ) : StackDoc()
+class StackText(val text:     String) : StackDoc()
 
-class StackDocDoc(val doc : Doc) : StackDoc()
+class StackDocDoc(val doc: Doc) : StackDoc()
 
-fun moveNil(docToMoveNil : Doc, docForNilPlace: Doc) : Doc {
+fun moveNil(docToMoveNil: Doc, docForNilPlace: Doc): Doc {
     if (docToMoveNil is Nil) {
         return docForNilPlace
     }
@@ -178,8 +188,8 @@ fun moveNil(docToMoveNil : Doc, docForNilPlace: Doc) : Doc {
     }
 }
 
-fun docFromStack(stack : ArrayList<StackDoc>) : Doc {
-    var curResult : Doc = Nil()
+fun docFromStack(stack: ArrayList<StackDoc>): Doc {
+    var curResult: Doc = Nil()
 
     for (curElem in stack) {
         when (curElem) {
@@ -196,7 +206,7 @@ fun docFromStack(stack : ArrayList<StackDoc>) : Doc {
     return curResult
 }
 
-fun best(width : Int, startAlreadyOccupied : Int, doc : PrimeDoc, nestSize : Int = 0) : Doc {
+fun best(width: Int, startAlreadyOccupied: Int, doc : PrimeDoc, nestSize : Int = 0): Doc {
     val workStack = Stack<Pair<Int, PrimeDoc>>()
     workStack.push(Pair(nestSize, doc))
     val resultStack = ArrayList<StackDoc>()
@@ -207,7 +217,7 @@ fun best(width : Int, startAlreadyOccupied : Int, doc : PrimeDoc, nestSize : Int
             return docFromStack(resultStack)
         }
 
-        val head = workStack.pop()
+        val head     = workStack.pop()
         val nestSize = head!!.first
         val doc      = head.second
 
@@ -244,7 +254,7 @@ fun best(width : Int, startAlreadyOccupied : Int, doc : PrimeDoc, nestSize : Int
     }
 }
 
-fun fits(placeSize: Int, docFunc: () -> Doc) : Doc? {
+fun fits(placeSize: Int, docFunc: () -> Doc): Doc? {
     if (placeSize < 0) return null
 
     val doc = docFunc()
