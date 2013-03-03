@@ -29,8 +29,8 @@ fun main(args : Array<String>) {
     )
     println(pretty(15, showTree(treeOld)))
 
-    val tree = generateTree(9, 5, 5, 100)
-    //val tree = generateTree(5, 5, 5, 100)
+    //val tree = generateTree(9, 5, 5, 100)
+    val tree = generateTree(5, 5, 5, 100)
     println("Press enter...")
     readLine()
 
@@ -40,8 +40,29 @@ fun main(args : Array<String>) {
     val duration = (endTime - startTime) / Math.pow(10.0, 9.0)
 
     println("Duration: " + duration)
-    //be_nonRecursive(15, 0, showTree(tree))
 }
+
+// ----- INTERFACE START -----
+
+fun nil() = PrimeNil()
+fun beside(leftDoc: PrimeDoc, rightDoc: PrimeDoc) = PrimeBeside(leftDoc, rightDoc)
+fun nest(nestSize: Int, doc : PrimeDoc) = PrimeNest(nestSize, doc)
+fun text(text : String) = PrimeText(text)
+fun line() = PrimeLine()
+
+fun PrimeDoc.plus(doc : PrimeDoc) : PrimeDoc {
+    return beside(this, doc)
+}
+
+fun group(doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
+
+fun pretty(width : Int, doc : PrimeDoc) : String = layout(best(width, 0, doc))
+
+// Utility
+fun bracket(openBracket: String, doc : PrimeDoc, closeBracket: String) : PrimeDoc =
+        group(text(openBracket) + nest(2, line() + doc) + line() + text(closeBracket))
+
+// ----- INTERFACE END -----
 
 abstract class PrimeDoc()
 class PrimeNil() : PrimeDoc()
@@ -73,24 +94,6 @@ class Line(
         , var doc : Doc
 ) : Doc(0)
 
-// ----- INTERFACE START -----
-fun nil() = PrimeNil()
-fun beside(leftDoc: PrimeDoc, rightDoc: PrimeDoc) = PrimeBeside(leftDoc, rightDoc)
-fun nest(nestSize: Int, doc : PrimeDoc) = PrimeNest(nestSize, doc)
-fun text(text : String) = PrimeText(text)
-fun line() = PrimeLine()
-
-fun PrimeDoc.plus(doc : PrimeDoc) : PrimeDoc {
-    return beside(this, doc)
-}
-
-// сделать ленивым тут!
-// Добавлена ленивость
-fun group(doc : PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
-
-// Еще в интерфейсе pretty
-// ----- INTERFACE END -----
-
 fun flatten(doc : PrimeDoc) : PrimeDoc =
         when (doc) {
             is PrimeNil    -> doc //PrimeNil()
@@ -104,23 +107,11 @@ fun flatten(doc : PrimeDoc) : PrimeDoc =
         }
 
 fun spaces(count : Int) : String {
-    var builder = StringBuilder()
+    val builder = StringBuilder()
     for (i in 1..count) {
-        builder .append(" ")
+        builder.append(" ")
     }
     return builder.toString()
-}
-
-fun layout_rec(doc : Doc) : String {
-    when (doc) {
-        is Nil  -> return ""
-        is Text -> return doc.text + layout(doc.doc)
-        is Line -> {
-            return "\n" + spaces(doc.nestSize) + layout(doc.doc)
-        }
-
-        else -> throw IllegalArgumentException("Unknown Doc.")
-    }
 }
 
 fun layout(doc : Doc) : String {
@@ -155,9 +146,9 @@ class StackText(val text  : String) : StackDoc()
 
 class StackDocDoc(val doc : Doc) : StackDoc()
 
-fun moveNil(docToMoveNil : Doc, docToNilPlace : Doc) : Doc {
+fun moveNil(docToMoveNil : Doc, docForNilPlace: Doc) : Doc {
     if (docToMoveNil is Nil) {
-        return docToNilPlace
+        return docForNilPlace
     }
 
     var curSubtreeDoc = docToMoveNil
@@ -166,8 +157,7 @@ fun moveNil(docToMoveNil : Doc, docToNilPlace : Doc) : Doc {
         when (curSubtreeDoc_val) {
             is Text -> {
                 if (curSubtreeDoc_val.doc is Nil) {
-                    var curSubtreeDoc_var = curSubtreeDoc_val
-                    curSubtreeDoc_val.doc = docToNilPlace
+                    curSubtreeDoc_val.doc = docForNilPlace
                     return docToMoveNil
                 }
 
@@ -176,8 +166,7 @@ fun moveNil(docToMoveNil : Doc, docToNilPlace : Doc) : Doc {
 
             is Line -> {
                 if (curSubtreeDoc_val.doc is Nil) {
-                    var curSubtreeDoc_var = curSubtreeDoc_val
-                    curSubtreeDoc_val.doc = docToNilPlace
+                    curSubtreeDoc_val.doc = docForNilPlace
                     return docToMoveNil
                 }
 
@@ -191,9 +180,8 @@ fun moveNil(docToMoveNil : Doc, docToNilPlace : Doc) : Doc {
 
 fun docFromStack(stack : ArrayList<StackDoc>) : Doc {
     var curResult : Doc = Nil()
-    for (curPos in stack.indices) {
-        val curElem = stack[curPos]
 
+    for (curElem in stack) {
         when (curElem) {
             is StackNil  -> {}
             is StackText -> curResult = Text(curElem.text    , curResult)
@@ -209,9 +197,9 @@ fun docFromStack(stack : ArrayList<StackDoc>) : Doc {
 }
 
 fun best(width : Int, startAlreadyOccupied : Int, doc : PrimeDoc, nestSize : Int = 0) : Doc {
-    var workStack = Stack<Pair<Int, PrimeDoc>>()
+    val workStack = Stack<Pair<Int, PrimeDoc>>()
     workStack.push(Pair(nestSize, doc))
-    var resultStack = ArrayList<StackDoc>()
+    val resultStack = ArrayList<StackDoc>()
     var alreadyOccupied = startAlreadyOccupied
 
     while (true) {
@@ -220,7 +208,6 @@ fun best(width : Int, startAlreadyOccupied : Int, doc : PrimeDoc, nestSize : Int
         }
 
         val head = workStack.pop()
-
         val nestSize = head!!.first
         val doc      = head.second
 
@@ -268,9 +255,3 @@ fun fits(placeSize: Int, docFunc: () -> Doc) : Doc? {
         null
     }
 }
-
-fun pretty(width : Int, doc : PrimeDoc) : String = layout(best(width, 0, doc))
-
-// Utility
-fun bracket(openBracket: String, doc : PrimeDoc, closeBracket: String) : PrimeDoc =
-        group(text(openBracket) + nest(2, line() + doc) + line() + text(closeBracket))
