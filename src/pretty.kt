@@ -3,6 +3,7 @@ package pretty
 import java.util.ArrayList
 import java.util.LinkedList
 import java.util.Stack
+import java.util.AbstractList
 
 fun main(args: Array<String>) {
     val doc = text("aaa") + nest(2, line() + text("bb") + nest(1, line() + text("cc")))
@@ -67,12 +68,47 @@ fun PrimeDoc.times(doc: PrimeDoc): PrimeDoc {
     return this + text(" ") + doc
 }
 
+fun PrimeDoc.mod(doc: PrimeDoc): PrimeDoc {
+    return this + PrimeChoose({ text(" ") }, line()) + doc
+}
+
+fun fill(docList: List<PrimeDoc>): PrimeDoc {
+    val head = docList.head
+    val tail = docList.tail
+
+    if (head == null) {
+        return nil()
+    }
+
+    if (tail.size == 0) {
+        return head
+    }
+
+    return PrimeChoose({ flatten(head) + fill(tail) }, head / fill(tail))
+}
+
 fun bracket(openBracket: String, doc: PrimeDoc, closeBracket: String, nestSize: Int = 2): PrimeDoc =
         group(text(openBracket) + nest(nestSize, line() + doc) + line() + text(closeBracket))
 
-//fun spread(docList : List<PrimeDoc>) : PrimeDoc =
+fun spread(docList : List<PrimeDoc>): PrimeDoc =
+        foldl({a, b -> a + b}
+              , nil()
+              , docList)
+
+fun stack(docList : List<PrimeDoc>): PrimeDoc =
+        foldl({a, b -> a / b}
+                , nil()
+                , docList)
 
 // ----- INTERFACE END -----
+
+fun foldl<T>(func: (T, T) -> T, start: T, list: List<T>) : T {
+    var result = start
+    for (elem in list) {
+        result = func(result, elem)
+    }
+    return result
+}
 
 abstract class PrimeDoc()
 class PrimeNil() : PrimeDoc()
