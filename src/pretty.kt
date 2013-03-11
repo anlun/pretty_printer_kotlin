@@ -5,6 +5,7 @@ import java.util.LinkedList
 import java.util.Stack
 import java.util.AbstractList
 
+/*
 fun main(args: Array<String>) {
     val doc = text("aaa") + nest(2, line() + text("bb") + nest(1, line() + text("cc")))
     println(pretty(15, doc))
@@ -42,6 +43,7 @@ fun main(args: Array<String>) {
 
     println("Duration: " + duration)
 }
+*/
 
 // ----- INTERFACE START -----
 
@@ -56,6 +58,8 @@ fun group(doc: PrimeDoc) = PrimeChoose({ flatten(doc) } , doc)
 fun pretty(width: Int, doc: PrimeDoc): String = layout(best(width, 0, doc))
 
 // Utility
+fun lnest(nestSize: Int, doc: PrimeDoc) = nest(nestSize, line() + doc)
+
 fun PrimeDoc.plus(doc: PrimeDoc): PrimeDoc {
     return beside(this, doc)
 }
@@ -68,9 +72,17 @@ fun PrimeDoc.times(doc: PrimeDoc): PrimeDoc {
     return this + text(" ") + doc
 }
 
+/*
 fun PrimeDoc.mod(doc: PrimeDoc): PrimeDoc {
     return this + PrimeChoose({ text(" ") }, line()) + doc
 }
+*/
+
+/*
+fun nestedBreak(leftDoc: PrimeDoc, nestSize: Int, rightDoc: PrimeDoc): PrimeDoc {
+    return leftDoc + nest(nestSize, line() + rightDoc)
+}
+*/
 
 fun fill(docList: List<PrimeDoc>): PrimeDoc {
     val head = docList.head
